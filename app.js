@@ -229,3 +229,86 @@ $("btnExport").addEventListener("click", exportCSV);
 $("btnReset").addEventListener("click", resetAll);
 
 render();
+function pad(n){ return String(n).padStart(2,"0"); }
+
+function makeICS({title, description, startDate, endDate, alarmMinutesBefore=0}) {
+  // iCalendar en UTC (simple et compatible)
+  const toUTC = (d) => {
+    const z = new Date(d.getTime() - d.getTimezoneOffset()*60000);
+    return z.toISOString().replace(/[-:]/g,"").split(".")[0] + "Z";
+  };
+
+  const uid = (crypto.randomUUID ? crypto.randomUUID() : String(Date.now())) + "@pointeuse";
+  const dtstamp = toUTC(new Date());
+  const dtstart = toUTC(startDate);
+  const dtend = toUTC(endDate);
+
+  return [
+    "BEGIN:VCALENDAR",
+    "VERSION:2.0",
+    "PRODID:-//Aurel Pointeuse//FR",
+    "CALSCALE:GREGORIAN",
+    "BEGIN:VEVENT",
+    `UID:${uid}`,
+    `DTSTAMP:${dtstamp}`,
+    `SUMMARY:${title}`,
+    `DESCRIPTION:${description || ""}`,
+    `DTSTART:${dtstart}`,
+    `DTEND:${dtend}`,
+    "BEGIN:VALARM",
+    "ACTION:DISPLAY",
+    `DESCRIPTION:${title}`,
+    `TRIGGER:-PT${alarmMinutesBefore}M`,
+    "END:VALARM",
+    "END:VEVENT",
+    "END:VCALENDAR"
+  ].join("\r\n");
+}
+
+function downloadText(filename, text, mime="text/calendar;charset=utf-8") {
+  const blob = new Blob([text], {type:mime});
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+document.getElementById("btnIcs")?.addEventListener("click", () => {
+  const s = document.getElementById("shiftStart").value; // "HH:MM"
+  const e = document.getElementById("shiftEnd").value;
+
+  if (!s || !e) { alert("Mets une heure de début et une heure de fin."); return; }
+
+  const today = new Date();
+  const [sh, sm] = s.split(":").map(Number);
+  const [eh, em] = e.split(":").map(Number);
+
+  const start = new Date(today.getFullYear(), today.getMonth(), today.getDate(), sh, sm, 0);
+  const end = new Date(today.getFullYear(), today.getMonth(), today.getDate(), eh, em, 0);
+
+  // Si fin < début, on suppose que ça finit le lendemain (shift de nuit)
+  if (end <= start) end.setDate(end.getDate() + 1);
+
+  // 2 fichiers .ics (plus simple à importer)
+  const icsStart = makeICS({
+    title: "⏱️ Pointer (Bazan)",
+    description: "Ouvre la pointeuse et appuie sur “Je pointe”.",
+    startDate: start,
+    endDate: new Date(start.getTime() + 5*60000), // event de 5 min
+    alarmMinutesBefore: 0
+  });
+
+  const icsEnd = makeICS({
+    title: "✅ Pense à dépointer",
+    description: "Ouvre la pointeuse et appuie sur “Je dépointe”.",
+    startDate: end,
+    endDate: new Date(end.getTime() + 5*60000),
+    alarmMinutesBefore: 0
+  });
+
+  downloadText(`rappel-pointer-${pad(sh)}${pad(sm)}.ics`, icsStart);
+  downloadText(`rappel-depointer-${pad(eh)}${pad(em)}.ics`, icsEnd);
+
+  alert("Deux fichiers .ics ont été téléchargés. Ouvre-les sur iPhone pour ajouter les rappels au Calendrier.");
+});
