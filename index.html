@@ -3,143 +3,214 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Pointeuse — Estaminet L’Amusette</title>
+  <title>Pointeuse Bazan</title>
 
   <link rel="manifest" href="manifest.webmanifest">
   <meta name="theme-color" content="#111111" />
 
   <style>
-    body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial;margin:0;padding:16px;background:#f6f6f6}
-    .card{background:#fff;border-radius:14px;padding:14px;margin-bottom:12px;box-shadow:0 2px 10px rgba(0,0,0,.06)}
-    h1{font-size:18px;margin:0 0 10px}
-    h2{font-size:15px;margin:14px 0 8px}
-    button{width:100%;padding:14px;border:0;border-radius:12px;font-size:16px}
-    .start{background:#111;color:#fff}
-    .stop{background:#d11;color:#fff}
-    .row{display:flex;gap:10px;align-items:center}
-    .row>*{flex:1}
-    .muted{color:#777;font-size:13px}
-    .pill{display:inline-block;padding:4px 10px;border-radius:999px;background:#eee;font-size:12px}
-    .bigTimer{font-size:34px;font-weight:800;letter-spacing:0.5px}
-    table{width:100%;border-collapse:collapse;font-size:14px}
-    th,td{padding:8px;border-bottom:1px solid #eee;text-align:left;vertical-align:top}
-    .btnSmall{padding:10px;font-size:14px;border-radius:10px}
-    .btnGhost{background:#efefef}
-    input,select{
-      width:100%; box-sizing:border-box;
-      padding:12px; border-radius:12px; border:1px solid #ddd; font-size:15px;
-      background:#fff;
+    :root{
+      --bg:#f6f6f6;
+      --card:#fff;
+      --text:#111;
+      --muted:#777;
+      --shadow: 0 2px 14px rgba(0,0,0,.07);
+      --r:16px;
+      --pad:14px;
     }
-    .twoCols{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+    body{
+      font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial;
+      margin:0;
+      background:var(--bg);
+      color:var(--text);
+    }
+    .wrap{
+      padding:16px;
+      padding-bottom:90px; /* place pour la barre du bas */
+      max-width:880px;
+      margin:0 auto;
+    }
+    h1{
+      font-size:28px;
+      margin:0 0 6px;
+      letter-spacing:-.4px;
+    }
+    .subtitle{ color:var(--muted); margin:0 0 14px; font-size:15px; }
+
+    .card{
+      background:var(--card);
+      border-radius:var(--r);
+      padding:var(--pad);
+      margin-bottom:12px;
+      box-shadow:var(--shadow);
+    }
+
+    .row{ display:flex; gap:10px; align-items:center; }
+    .row > *{ flex:1; }
+
+    button{
+      width:100%;
+      padding:14px;
+      border:0;
+      border-radius:14px;
+      font-size:16px;
+      font-weight:600;
+      cursor:pointer;
+    }
+    button:disabled{ opacity:.4; cursor:not-allowed; }
+
+    .start{ background:#111; color:#fff; }
+    .stop{ background:#d11; color:#fff; }
+    .ghost{ background:#eee; color:#111; }
+
+    .pill{
+      display:inline-block;
+      padding:5px 10px;
+      border-radius:999px;
+      background:#eee;
+      font-size:12px;
+      font-weight:600;
+    }
+    .muted{ color:var(--muted); font-size:13px; }
+
+    table{ width:100%; border-collapse:collapse; font-size:14px; }
+    th,td{ padding:8px; border-bottom:1px solid #eee; text-align:left; }
+
+    /* Tabs */
+    .tabbar{
+      position:fixed;
+      left:0; right:0; bottom:0;
+      background:rgba(255,255,255,.92);
+      backdrop-filter: blur(14px);
+      border-top:1px solid rgba(0,0,0,.08);
+      padding:10px 10px calc(10px + env(safe-area-inset-bottom));
+      display:flex;
+      gap:8px;
+      justify-content:space-around;
+    }
+    .tab{
+      flex:1;
+      border-radius:14px;
+      padding:10px 8px;
+      text-align:center;
+      font-size:12px;
+      color:#555;
+      font-weight:700;
+      user-select:none;
+    }
+    .tab.active{
+      background:#111;
+      color:#fff;
+    }
+    .tab span{ display:block; font-size:18px; margin-bottom:3px; }
+    .view{ display:none; }
+    .view.active{ display:block; }
+
+    .topstats{
+      display:grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap:10px;
+    }
+    .stat{
+      background:#f1f1f1;
+      border-radius:14px;
+      padding:12px;
+    }
+    .stat .k{ font-size:12px; color:#666; font-weight:700; }
+    .stat .v{ font-size:18px; font-weight:800; margin-top:4px; }
   </style>
 </head>
 
 <body>
 
-  <div class="card">
-    <h1>⏱️ Pointeuse — Estaminet L’Amusette</h1>
-    <div class="muted">App perso (local sur iPhone) + rappels via Calendrier</div>
-  </div>
+  <div class="wrap">
+    <h1>⏱️ Pointeuse</h1>
+    <p class="subtitle">Bazan • hors-ligne • rapide</p>
 
-  <div class="card">
-    <div class="row">
-      <button id="btnStart" class="start">Je pointe</button>
-      <button id="btnStop" class="stop" disabled>Je dépointe</button>
-    </div>
+    <!-- VIEW: Pointage -->
+    <div id="view-clock" class="view active">
+      <div class="card">
+        <div class="row">
+          <button id="btnStart" class="start">Je pointe</button>
+          <button id="btnStop" class="stop" disabled>Je dépointe</button>
+        </div>
 
-    <div style="margin-top:10px" class="muted">
-      Statut : <span id="status" class="pill">pas pointé</span>
-    </div>
-
-    <div style="margin-top:10px" id="currentInfo" class="muted"></div>
-
-    <div style="margin-top:12px">
-      <div class="muted">Temps en poste (temps réel)</div>
-      <div id="liveTimer" class="bigTimer">00:00:00</div>
-    </div>
-
-    <div style="margin-top:12px" class="twoCols">
-      <button id="btnIcsFromOpen" class="btnSmall btnGhost" title="Crée un rappel fin prévu + début (si besoin)">
-        🔔 Notifs pour ce shift (ICS)
-      </button>
-      <button id="btnClearOpen" class="btnSmall btnGhost" title="Annule un pointage en cours (si erreur)">
-        🧹 Annuler pointage en cours
-      </button>
-    </div>
-
-    <div style="margin-top:10px" class="muted">
-      Astuce : “Notifs pour ce shift” te demande l’heure de fin prévue et génère un fichier .ics à ouvrir sur iPhone.
-    </div>
-  </div>
-
-  <div class="card">
-    <h1>📅 Aujourd’hui</h1>
-    <div id="today"></div>
-  </div>
-
-  <div class="card">
-    <h1>📊 Semaine (lun → dim)</h1>
-    <div class="muted" id="weekTotal"></div>
-    <div id="week"></div>
-  </div>
-
-  <div class="card">
-    <h1>🗓️ Planning (pour prévoir les notifs)</h1>
-
-    <div class="twoCols">
-      <div>
-        <div class="muted">Date</div>
-        <input id="planDate" type="date">
+        <div style="margin-top:10px" class="muted">
+          Statut : <span id="status" class="pill">pas pointé</span>
+        </div>
+        <div style="margin-top:10px" class="muted" id="currentInfo"></div>
       </div>
-      <div>
-        <div class="muted">Type</div>
-        <select id="planType">
-          <option value="midi">Midi</option>
-          <option value="soir">Soir</option>
-          <option value="autre">Autre</option>
-        </select>
+
+      <div class="card">
+        <h2 style="margin:0 0 8px">📅 Aujourd’hui</h2>
+        <div id="today"></div>
       </div>
     </div>
 
-    <div class="twoCols" style="margin-top:10px">
-      <div>
-        <div class="muted">Début</div>
-        <input id="planStart" type="time">
-      </div>
-      <div>
-        <div class="muted">Fin</div>
-        <input id="planEnd" type="time">
+    <!-- VIEW: Semaine -->
+    <div id="view-week" class="view">
+      <div class="card">
+        <h2 style="margin:0 0 8px">📊 Semaine (lun → dim)</h2>
+        <div class="muted" id="weekTotal"></div>
+        <div id="week" style="margin-top:8px"></div>
       </div>
     </div>
 
-    <div style="margin-top:10px" class="twoCols">
-      <button id="btnAddPlan" class="btnSmall btnGhost">➕ Ajouter au planning</button>
-      <button id="btnExportPlanIcs" class="btnSmall btnGhost">🔔 Générer notifs planning (ICS)</button>
+    <!-- VIEW: Mois -->
+    <div id="view-month" class="view">
+      <div class="card">
+        <div class="row">
+          <button id="btnPrevMonth" class="ghost">◀</button>
+          <div style="text-align:center; font-weight:800" id="monthTitle">Mois</div>
+          <button id="btnNextMonth" class="ghost">▶</button>
+        </div>
+        <div style="height:10px"></div>
+
+        <div class="topstats">
+          <div class="stat">
+            <div class="k">Total</div>
+            <div class="v" id="monthTotal">0h00</div>
+          </div>
+          <div class="stat">
+            <div class="k">Jours</div>
+            <div class="v" id="monthDays">0</div>
+          </div>
+          <div class="stat">
+            <div class="k">Sessions</div>
+            <div class="v" id="monthSessions">0</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2 style="margin:0 0 8px">📆 Détails du mois</h2>
+        <div id="monthList"></div>
+      </div>
     </div>
 
-    <div class="muted" style="margin-top:10px">
-      “Générer notifs planning” crée un fichier .ics avec 2 alertes par shift (début/fin).
+    <!-- VIEW: Réglages -->
+    <div id="view-settings" class="view">
+      <div class="card">
+        <h2 style="margin:0 0 8px">⚙️ Réglages</h2>
+        <div class="row">
+          <button id="btnExport" class="ghost">Exporter CSV</button>
+          <button id="btnReset" class="ghost" title="Supprime tout">Reset</button>
+        </div>
+        <div class="muted" style="margin-top:10px">
+          Astuce : bientôt on ajoutera un choix de lieu (Bazan / autre) et un salaire.
+        </div>
+      </div>
     </div>
-
-    <h2>Shifts enregistrés</h2>
-    <div id="planningList"></div>
   </div>
 
-  <div class="card">
-    <div class="twoCols">
-      <button id="btnExportCSV" class="btnSmall">Exporter heures (CSV)</button>
-      <button id="btnResetAll" class="btnSmall btnGhost">Reset (tout)</button>
-    </div>
-    <div class="muted" style="margin-top:10px">
-      CSV = utile pour recopier sur un tableau / Excel.
-    </div>
+  <!-- Barre du bas -->
+  <div class="tabbar">
+    <div class="tab active" data-view="clock"><span>⏱️</span>Pointage</div>
+    <div class="tab" data-view="week"><span>📊</span>Semaine</div>
+    <div class="tab" data-view="month"><span>📆</span>Mois</div>
+    <div class="tab" data-view="settings"><span>⚙️</span>Réglages</div>
   </div>
 
   <script src="app.js"></script>
-  <script>
-    if ("serviceWorker" in navigator) {
-      navigator.serviceWorker.register("./sw.js");
-    }
-  </script>
 </body>
 </html>
